@@ -30,7 +30,7 @@ void app_main(void)
         .rgb_led_type = RGB_LED_TYPE_WS2812,
         .rmt_channel = RMT_CHANNEL_1,
         .rmt_interrupt_num = LED_STRIP_RMT_INTR_NUM,
-        .gpio = GPIO_NUM_18,
+        .gpio = GPIO_NUM_5,
         .led_strip_buf_1 = led_strip_buf_1,
         .led_strip_buf_2 = led_strip_buf_2,
         .led_strip_length = LED_STRIP_LENGTH};
@@ -40,20 +40,35 @@ void app_main(void)
     assert(led_init_ok);
 
     struct led_color_t led_color = {
-        .red = 5,
-        .green = 5,
-        .blue = 5,
+        .red = 0,
+        .green = 0,
+        .blue = 0,
     };
 
     while (true)
     {
-        for (uint32_t index = 0; index < LED_STRIP_LENGTH; index++)
-        {
-            led_strip_set_pixel_color(&led_strip, index, &led_color);
-        }
-        led_strip_show(&led_strip);
+        led_color.red = 75;
+        led_color.green = 0;
+        led_color.blue = 0;
 
-        led_color.red += 5;
-        vTaskDelay(30 / portTICK_PERIOD_MS);
+        led_strip_set_pixel_color(&led_strip, 0, &led_color);    
+        led_strip_show(&led_strip);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        led_color.red = 0;
+        led_color.green = 75;
+        led_color.blue = 0;
+
+        led_strip_set_pixel_color(&led_strip, 0, &led_color);    
+        led_strip_show(&led_strip);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        led_color.red = 0;
+        led_color.green = 0;
+        led_color.blue = 75;
+
+        led_strip_set_pixel_color(&led_strip, 0, &led_color);    
+        led_strip_show(&led_strip);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

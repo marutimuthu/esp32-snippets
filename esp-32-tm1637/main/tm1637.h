@@ -13,6 +13,9 @@
 #ifndef TM1637_H
 #define TM1637_H
 
+ // XGFEDCBA
+
+
 #include <inttypes.h>
 #include <stdbool.h>
 #include <driver/gpio.h>
@@ -20,6 +23,31 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define A 		0x77
+#define b 		0x7c
+#define C 		0x39
+#define _C 		0x58
+#define D 		0x3f		
+#define d 		0x5e
+#define E 		0x79
+#define F 		0x71
+#define MINUS 	0x40
+#define _R 		0x50
+#define H 		0x76
+#define P 		0x73
+#define I 		0x30
+#define _I 		0x10
+#define L 		0x38
+#define _L 		0x06
+#define N 		0x37
+#define _N 		0x54
+#define O 		0x3f		
+#define _O 		0x5c
+#define S 		0x6d
+#define _T 		0x78
+#define T 		0x31
+#define CLR 	0x00
 
 struct tm;
 
@@ -52,15 +80,23 @@ void tm1637_set_brightness(tm1637_led_t * led, uint8_t level);
  * @param num Number to set (0x00..0x0F, 0xFF for clear)
  * @param dot Display dot of this segment
  */
-void tm1637_set_segment_number(tm1637_led_t * led, const uint8_t segment_idx, const uint8_t num, const bool dot);
+void tm1637_set_segment_number(tm1637_led_t * led, const uint8_t segment_idx, const int8_t num, const bool dot);
 
+/**
+ * @brief Set one-segment number, also controls dot of this segment
+ * @param led LED object
+ * @param segment_idx Segment index (0..3)
+ * @param ch hex code of character to be displayed
+ * @param dot Display dot of this segment
+ */
+void tm1637_set_segment_char(tm1637_led_t * led, const uint8_t segment_idx, const int8_t ch, const bool dot);
 /**
  * @brief Set one-segment raw segment data
  * @param led LED object
  * @param segment_idx Segment index (0..3)
  * @param data Raw data, bitmask is XGFEDCBA
  */
-void tm1637_set_segment_raw(tm1637_led_t * led, const uint8_t segment_idx, const uint8_t data);
+void tm1637_set_segment_raw(tm1637_led_t * led, const uint8_t segment_idx, const int8_t data);
 
 /**
  * @brief Set full display number, in decimal encoding
@@ -92,6 +128,62 @@ void tm1637_set_number_lead_dot(tm1637_led_t * led, uint16_t number, const bool 
  * @param, n Floating point number
  */
 void tm1637_set_float(tm1637_led_t * led, float n);
+
+
+/**
+ * @brief Set "Connecting" message
+ * @param led LED object
+ */
+void conn_display(tm1637_led_t * led);
+
+/**
+ * @brief Set count display number
+ * @param led LED object
+ * @param, x  count to be displayed
+ */
+void num_display(tm1637_led_t * led, int32_t x);
+
+/**
+ * @brief Set "PASS" message
+ * @param led LED object
+ */
+void pass_display(tm1637_led_t * led);
+
+/**
+ * @brief Set "FAIL" message
+ * @param led LED object
+ */
+void fail_display(tm1637_led_t * led);
+
+/**
+ * @brief Set "DONE" message
+ * @param led LED object
+ */
+void done_display(tm1637_led_t * led);
+
+/**
+ * @brief Set "ERROR" message
+ * @param led LED object
+ */
+void error_display(tm1637_led_t * led);
+
+/**
+ * @brief Set "ACK" message
+ * @param led LED object
+ */
+void ack_display(tm1637_led_t * led);
+
+/**
+ * @brief Set "FILL" message
+ * @param led LED object
+ */
+void fill_display(tm1637_led_t * led);
+
+/**
+ * @brief Set "ALITER" message
+ * @param led LED object
+ */
+void aliter_display(tm1637_led_t * led);
 
 #ifdef __cplusplus
 }

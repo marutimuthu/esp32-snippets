@@ -15,8 +15,6 @@
 #include <string.h>
 #include <math.h>
 #include <esp32/rom/ets_sys.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 
 #define TM1637_ADDR_AUTO  0x40
 #define TM1637_ADDR_FIXED 0x44
@@ -24,24 +22,24 @@
 #define MINUS_SIGN_IDX  16
 
 static const int8_t tm1637_symbols[] = {
-          // XGFEDCBA
-    0x3f, // 0b00111111,    // 0/O
-    0x06, // 0b00000110,    // 1
-    0x5b, // 0b01011011,    // 2
-    0x4f, // 0b01001111,    // 3
-    0x66, // 0b01100110,    // 4
-    0x6d, // 0b01101101,    // 5 /S
-    0x7d, // 0b01111101,    // 6
-    0x07, // 0b00000111,    // 7
-    0x7f, // 0b01111111,    // 8
-    0x6f, // 0b01101111,    // 9
-    0x77, // 0b01110111,    // A //10
-    0x7c, // 0b01111100,    // b
-    0x39, // 0b00111001,    // C
-    0x5e, // 0b01011110,    // d
-    0x79, // 0b01111001,    // E
-    0x71, // 0b01110001     // F //15
-    0x40 // 0b01000000     // minus sign
+                // XGFEDCBA
+        0x3f, // 0b00111111,    // 0
+        0x06, // 0b00000110,    // 1
+        0x5b, // 0b01011011,    // 2
+        0x4f, // 0b01001111,    // 3
+        0x66, // 0b01100110,    // 4
+        0x6d, // 0b01101101,    // 5
+        0x7d, // 0b01111101,    // 6
+        0x07, // 0b00000111,    // 7
+        0x7f, // 0b01111111,    // 8
+        0x6f, // 0b01101111,    // 9
+        0x77, // 0b01110111,    // A
+        0x7c, // 0b01111100,    // b
+        0x39, // 0b00111001,    // C
+        0x5e, // 0b01011110,    // d
+        0x79, // 0b01111001,    // E
+        0x71, // 0b01110001     // F
+        0x40, // 0b01000000     // minus sign
 };
 
 static void tm1637_start(tm1637_led_t * led);
@@ -131,14 +129,13 @@ void tm1637_set_brightness(tm1637_led_t * led, uint8_t level)
     led->m_brightness = level;
 }
 
-void tm1637_set_segment_number(tm1637_led_t * led, const uint8_t segment_idx, const int8_t num, const bool dot)
+void tm1637_set_segment_number(tm1637_led_t * led, const uint8_t segment_idx, const uint8_t num, const bool dot)
 {
-    int8_t seg_data = 0x00;
+    uint8_t seg_data = 0x00;
 
     if (num < (sizeof(tm1637_symbols)/sizeof(tm1637_symbols[0]))) {
         seg_data = tm1637_symbols[num]; // Select proper segment image
     }
-   
 
     if (dot) {
         seg_data |= 0x80; // Set DOT segment flag
@@ -146,18 +143,8 @@ void tm1637_set_segment_number(tm1637_led_t * led, const uint8_t segment_idx, co
 
     tm1637_set_segment_raw(led, segment_idx, seg_data);
 }
-void tm1637_set_segment_char(tm1637_led_t * led, const uint8_t segment_idx, const int8_t ch, const bool dot)
-{
-    int8_t seg_data = 0x00;
-    seg_data = ch;
-    //seg_data = ch;
-    if (dot) {
-        seg_data |= 0x80; // Set DOT segment flag
-    }
-    tm1637_set_segment_raw(led, segment_idx, seg_data);
-}
 
-void tm1637_set_segment_raw(tm1637_led_t * led, const uint8_t segment_idx, const int8_t data)
+void tm1637_set_segment_raw(tm1637_led_t * led, const uint8_t segment_idx, const uint8_t data)
 {
     tm1637_start(led);
     tm1637_send_byte(led, TM1637_ADDR_FIXED);
@@ -184,30 +171,27 @@ void tm1637_set_number_lead(tm1637_led_t * led, uint16_t number, const bool lead
 void tm1637_set_number_lead_dot(tm1637_led_t * led, uint16_t number, bool lead_zero, const uint8_t dot_mask)
 {
     uint8_t lead_number = lead_zero ? 0xFF : tm1637_symbols[0];
-    //uint8_t lead_number = lead_zero ? 0xFF : ZERO;
-
-    
 
     if (number < 10) {
-        tm1637_set_segment_number(led, 0, number, true);
-        tm1637_set_segment_number(led, 1, lead_number,  true);
-        tm1637_set_segment_number(led, 2, lead_number, true);
-        tm1637_set_segment_number(led, 3, lead_number, true);
+        tm1637_set_segment_number(led, 3, number, dot_mask & 0x01);
+        tm1637_set_segment_number(led, 2, lead_number, dot_mask & 0x02);
+        tm1637_set_segment_number(led, 1, lead_number, dot_mask & 0x04);
+        tm1637_set_segment_number(led, 0, lead_number, dot_mask & 0x08);
     } else if (number < 100) {
-        tm1637_set_segment_number(led, 0, number % 10,true);
-        tm1637_set_segment_number(led, 1, (number / 10) % 10, true);
-        tm1637_set_segment_number(led, 2, lead_number, true);
-        tm1637_set_segment_number(led, 3, lead_number, true);
+        tm1637_set_segment_number(led, 3, number % 10, dot_mask & 0x01);
+        tm1637_set_segment_number(led, 2, (number / 10) % 10, dot_mask & 0x02);
+        tm1637_set_segment_number(led, 1, lead_number, dot_mask & 0x04);
+        tm1637_set_segment_number(led, 0, lead_number, dot_mask & 0x08);
     } else if (number < 1000) {
-        tm1637_set_segment_number(led, 0, number % 10, true);
-        tm1637_set_segment_number(led, 1, (number / 10) % 10,true);
-        tm1637_set_segment_number(led, 2, (number / 100) % 10, true);
-        tm1637_set_segment_number(led, 3, lead_number, true);
+        tm1637_set_segment_number(led, 3, number % 10, dot_mask & 0x01);
+        tm1637_set_segment_number(led, 2, (number / 10) % 10, dot_mask & 0x02);
+        tm1637_set_segment_number(led, 1, (number / 100) % 10, dot_mask & 0x04);
+        tm1637_set_segment_number(led, 0, lead_number, dot_mask & 0x08);
     } else {
-        tm1637_set_segment_number(led, 0, number % 10, true);
-        tm1637_set_segment_number(led, 1, (number / 10) % 10, true);
-        tm1637_set_segment_number(led, 2, (number / 100) % 10, true);
-        tm1637_set_segment_number(led, 3, (number / 1000) % 10, true);
+        tm1637_set_segment_number(led, 3, number % 10, dot_mask & 0x01);
+        tm1637_set_segment_number(led, 2, (number / 10) % 10, dot_mask & 0x02);
+        tm1637_set_segment_number(led, 1, (number / 100) % 10, dot_mask & 0x04);
+        tm1637_set_segment_number(led, 0, (number / 1000) % 10, dot_mask & 0x08);
     }
 }
 
@@ -273,109 +257,3 @@ void tm1637_set_float(tm1637_led_t * led, float n) {
         }
     }
 }
-
-void num_display(tm1637_led_t * led, int32_t x)
-{
-    //Display count
-	tm1637_set_number_lead_dot(led,x,0,true);	
-}
-void conn_display(tm1637_led_t * led)
-{
-	//CONNECTING
-	tm1637_set_segment_char(led, 0, _N, true);
-	tm1637_set_segment_char(led, 1, _N, true); 
-	tm1637_set_segment_char(led, 2, _O, true);
-	tm1637_set_segment_char(led, 3, C, true);
-}
-
-void pass_display(tm1637_led_t * led)
-{
-	// PASS 19 10 5 5	
-	tm1637_set_segment_char(led, 0, S, true);
-	tm1637_set_segment_char(led, 1, S , true); 
-	tm1637_set_segment_char(led, 2, A, true);
-	tm1637_set_segment_char(led, 3, P , true);
-}
-
-void fail_display(tm1637_led_t * led)
-{
-	// FAIL 15 10 20 21	
-	tm1637_set_segment_char(led, 0, L, true);
-	tm1637_set_segment_char(led, 1, I, true); 
-	tm1637_set_segment_char(led, 2, A, true);
-	tm1637_set_segment_char(led, 3, F, true);
-}
-
-void done_display(tm1637_led_t * led)
-{
-	//DONE	
-	tm1637_set_segment_char(led, 0, E, true);
-	tm1637_set_segment_char(led, 1, _N, true); 
-	tm1637_set_segment_char(led, 2, _O, true);
-	tm1637_set_segment_char(led, 3, D, true);
-}
-void error_display(tm1637_led_t * led)
-{
-	//ERROR	r
-	tm1637_set_segment_char(led, 0, _R, true);
-	tm1637_set_segment_char(led, 1, _R, true); 
-	tm1637_set_segment_char(led, 2, E, true);
-	tm1637_set_segment_char(led, 3, CLR, true);
-}
-void ack_display(tm1637_led_t * led)
-{
-	//ACKNOWLEGDEMENT
-	tm1637_set_segment_char(led, 0, H, true);
-	tm1637_set_segment_char(led, 1, C, true); 
-	tm1637_set_segment_char(led, 2, A, true);
-	tm1637_set_segment_char(led, 3, CLR, true);
-}
-void fill_display(tm1637_led_t * led)
-{
-	//CONNECTING
-	tm1637_set_segment_char(led, 0, _N, true);
-	tm1637_set_segment_char(led, 1, _N, true); 
-	tm1637_set_segment_char(led, 2, _O, true);
-	tm1637_set_segment_char(led, 3, C, true);
-}
-void aliter_display(tm1637_led_t * led)
-{
-    int delay=400;
-    tm1637_set_segment_char(led, 0, CLR, true);
-	tm1637_set_segment_char(led, 1, CLR, true); 
-	tm1637_set_segment_char(led, 2, CLR, true);
-	tm1637_set_segment_char(led, 3, CLR, true);
-
-    tm1637_set_segment_char(led, 0, A, true);
-    vTaskDelay(delay / portTICK_RATE_MS);
-
-    tm1637_set_segment_char(led, 1, A, true);
-	tm1637_set_segment_char(led, 0, L, true); 
-    vTaskDelay(delay / portTICK_RATE_MS);
-
-    tm1637_set_segment_char(led, 2, A, true);
-	tm1637_set_segment_char(led, 1, L, true); 
-	tm1637_set_segment_char(led, 0, I, true);
-    vTaskDelay(delay / portTICK_RATE_MS);
-
-    tm1637_set_segment_char(led, 3, A, true);
-    tm1637_set_segment_char(led, 2, L, true);
-    tm1637_set_segment_char(led, 1, I, true);
-	tm1637_set_segment_char(led, 0, _T, true);
-    vTaskDelay(delay / portTICK_RATE_MS);
-    
-    tm1637_set_segment_char(led, 3, L, true);
-    tm1637_set_segment_char(led, 2, I, true);
-    tm1637_set_segment_char(led, 1, _T, true);
-	tm1637_set_segment_char(led, 0, E, true);
-    vTaskDelay(delay / portTICK_RATE_MS);
-
-    tm1637_set_segment_char(led, 3, I, true);
-    tm1637_set_segment_char(led, 2, _T, true);
-    tm1637_set_segment_char(led, 1, E, true);
-	tm1637_set_segment_char(led, 0, _R, true);
-    vTaskDelay(delay / portTICK_RATE_MS);
-    // tm1637_set_segment_char(led, 3, E, true);
-    // tm1637_set_segment_char(led, 3, _R, true);
-}
-

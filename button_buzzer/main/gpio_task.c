@@ -49,7 +49,7 @@
 #define gSH 830
 #define aH 880
 
-#define GPIO_INPUT     4
+#define GPIO_INPUT     18
 #define GPIO_OUTPUT    23
 #define GPIO_OUTPUT_SPEED LEDC_LOW_SPEED_MODE // back too old git commit :-(
 // #define GPIO_OUTPUT_SPEED LEDC_HIGH_SPEED_MODE
@@ -59,6 +59,8 @@
 EventGroupHandle_t alarm_eventgroup;
 
 const int GPIO_SENSE_BIT = BIT0;
+
+uint32_t count = 0;
 
 void IRAM_ATTR gpio_isr_handler(void* arg) {
     uint32_t gpio_num = (uint32_t) arg;
@@ -100,12 +102,12 @@ void sound(int gpio_num,uint32_t freq,uint32_t duration) {
 	ledc_conf.channel    = LEDC_CHANNEL_0;
 	ledc_conf.intr_type  = LEDC_INTR_DISABLE;
 	ledc_conf.timer_sel  = LEDC_TIMER_0;
-    ledc_conf.duty       = 0x7FFF; // 50%=0x3FFF, 100%=0x7FFF for 15 Bit
+    ledc_conf.duty       = 0x0; // 50%=0x3FFF, 100%=0x7FFF for 15 Bit
                              // 50%=0x01FF, 100%=0x03FF for 10 Bit
     ledc_channel_config(&ledc_conf);
 
 	// start
-    ledc_set_duty(GPIO_OUTPUT_SPEED, LEDC_CHANNEL_0, 0x7FFF); // 12% duty - play here for your speaker or buzzer
+    ledc_set_duty(GPIO_OUTPUT_SPEED, LEDC_CHANNEL_0, 0x7F); // 12% duty - play here for your speaker or buzzer
     ledc_update_duty(GPIO_OUTPUT_SPEED, LEDC_CHANNEL_0);
 	vTaskDelay(duration/portTICK_PERIOD_MS);
 	// stop
@@ -223,8 +225,16 @@ void gpio_task(void *pvParameters) {
 		bits=xEventGroupWaitBits(alarm_eventgroup, GPIO_SENSE_BIT,pdTRUE, pdFALSE, 60000 / portTICK_RATE_MS); // max wait 60s
 		if(bits==1) {
 			xEventGroupClearBits(alarm_eventgroup, GPIO_SENSE_BIT);
+            vTaskDelay(100/portTICK_PERIOD_MS);
+            if (bits==1)
+            {
+            count++;
+            ESP_LOGI(TAG, "Count: %d", count);
+                /* code */
+            }
+            
 			// play_march(0);
-            beep();
+            // beep();
         }
     }
 	ESP_LOGI(TAG, "All done!");

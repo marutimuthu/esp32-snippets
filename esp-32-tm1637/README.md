@@ -31,3 +31,6 @@ Inital idea based on Arduino <tm1637.h> library, written by Frankie.Chu Copyrigh
 ## Contacts
 
  * Email: petro@petro.ws
+## Reference for characters
+
+https://en.wikichip.org/wiki/seven-segment_display/representing_letters
