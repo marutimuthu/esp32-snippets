@@ -74,7 +74,7 @@ void init_gpio(void) {
     gpio_config_t io_conf;
 
     //interrupt of falling edge
-	io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
+	io_conf.intr_type = GPIO_PIN_INTR_NEGEDGE;
 	io_conf.pin_bit_mask = (1<<GPIO_INPUT);
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = 1;
@@ -217,6 +217,7 @@ void play_march(uint8_t longplay) {
 void beep(){
     sound(GPIO_OUTPUT, c, 300);
 }
+
 void gpio_task(void *pvParameters) {
 	EventBits_t bits;
 	alarm_eventgroup = xEventGroupCreate();
@@ -224,17 +225,12 @@ void gpio_task(void *pvParameters) {
 	while (1) {
 		bits=xEventGroupWaitBits(alarm_eventgroup, GPIO_SENSE_BIT,pdTRUE, pdFALSE, 60000 / portTICK_RATE_MS); // max wait 60s
 		if(bits==1) {
-			xEventGroupClearBits(alarm_eventgroup, GPIO_SENSE_BIT);
-            vTaskDelay(100/portTICK_PERIOD_MS);
-            if (bits==1)
-            {
             count++;
+            vTaskDelay(250/portTICK_PERIOD_MS);
+			xEventGroupClearBits(alarm_eventgroup, GPIO_SENSE_BIT);
             ESP_LOGI(TAG, "Count: %d", count);
-                /* code */
-            }
-            
+            beep();
 			// play_march(0);
-            // beep();
         }
     }
 	ESP_LOGI(TAG, "All done!");
