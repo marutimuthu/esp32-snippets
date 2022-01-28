@@ -48,8 +48,9 @@
 #define gH 784
 #define gSH 830
 #define aH 880
+#define aSH 932
 
-#define GPIO_INPUT     18
+#define GPIO_INPUT     4
 #define GPIO_OUTPUT    23
 #define GPIO_OUTPUT_SPEED LEDC_LOW_SPEED_MODE // back too old git commit :-(
 // #define GPIO_OUTPUT_SPEED LEDC_HIGH_SPEED_MODE
@@ -89,22 +90,37 @@ void init_gpio(void) {
 
 void sound(int gpio_num,uint32_t freq,uint32_t duration) {
 
-	ledc_timer_config_t timer_conf;
-	timer_conf.speed_mode = GPIO_OUTPUT_SPEED;
-	timer_conf.duty_resolution = LEDC_TIMER_10_BIT;
-	timer_conf.timer_num  = LEDC_TIMER_0;
-	timer_conf.freq_hz    = freq;
-	ledc_timer_config(&timer_conf);
+    // Configure timer zero
+	ledc_timer_config_t ledc_timer =
+	{
+		.duty_resolution	= LEDC_TIMER_10_BIT,
+		.freq_hz			= freq,
+		.speed_mode			= GPIO_OUTPUT_SPEED,
+		.timer_num			= LEDC_TIMER_0
+	};
+	ledc_timer_config(&ledc_timer);
 
-	ledc_channel_config_t ledc_conf;
-	ledc_conf.gpio_num   = gpio_num;
-	ledc_conf.speed_mode = GPIO_OUTPUT_SPEED;
-	ledc_conf.channel    = LEDC_CHANNEL_0;
-	ledc_conf.intr_type  = LEDC_INTR_DISABLE;
-	ledc_conf.timer_sel  = LEDC_TIMER_0;
-    ledc_conf.duty       = 0x0; // 50%=0x3FFF, 100%=0x7FFF for 15 Bit
-                             // 50%=0x01FF, 100%=0x03FF for 10 Bit
-    ledc_channel_config(&ledc_conf);
+    ledc_channel_config_t ledc_channel =
+    {
+        .channel	= LEDC_CHANNEL_0,
+        .duty		= 0x0,
+        .hpoint		= 0,
+        .gpio_num	= gpio_num,
+        .intr_type	= LEDC_INTR_DISABLE,
+        .speed_mode = GPIO_OUTPUT_SPEED,
+        .timer_sel	= LEDC_TIMER_0,
+    };
+    ledc_channel_config(&ledc_channel);
+    
+	// ledc_channel_config_t ledc_conf;
+	// ledc_conf.gpio_num   = gpio_num;
+	// ledc_conf.speed_mode = GPIO_OUTPUT_SPEED;
+	// ledc_conf.channel    = LEDC_CHANNEL_0;
+	// ledc_conf.intr_type  = LEDC_INTR_DISABLE;
+	// ledc_conf.timer_sel  = LEDC_TIMER_0;
+    // ledc_conf.duty       = 0x01FF; // 50%=0x3FFF, 100%=0x7FFF for 15 Bit
+    //                          // 50%=0x01FF, 100%=0x03FF for 10 Bit
+    // ledc_channel_config(&ledc_conf);
 
 	// start
     ledc_set_duty(GPIO_OUTPUT_SPEED, LEDC_CHANNEL_0, 0x7F); // 12% duty - play here for your speaker or buzzer
@@ -113,6 +129,58 @@ void sound(int gpio_num,uint32_t freq,uint32_t duration) {
 	// stop
     ledc_set_duty(GPIO_OUTPUT_SPEED, LEDC_CHANNEL_0, 0);
     ledc_update_duty(GPIO_OUTPUT_SPEED, LEDC_CHANNEL_0);
+
+}
+
+void naagin() {
+    sound(GPIO_OUTPUT,eH, 200);
+    sound(GPIO_OUTPUT,dH, 200);
+    sound(GPIO_OUTPUT,fH, 200);
+    sound(GPIO_OUTPUT,dH, 200);
+    sound(GPIO_OUTPUT,eH, 200);
+    sound(GPIO_OUTPUT,cH, 200);
+    sound(GPIO_OUTPUT,dH, 200);
+    sound(GPIO_OUTPUT,cH, 200);
+
+    sound(GPIO_OUTPUT,eH, 200);
+    sound(GPIO_OUTPUT,dH, 200);
+    sound(GPIO_OUTPUT,fH, 200);
+    sound(GPIO_OUTPUT,dH, 200);
+    sound(GPIO_OUTPUT,eH, 200);
+    sound(GPIO_OUTPUT,cH, 200);
+    sound(GPIO_OUTPUT,dH, 200);
+
+    sound(GPIO_OUTPUT,eH, 200);
+    sound(GPIO_OUTPUT,fH, 200);
+    sound(GPIO_OUTPUT,aH, 500);
+
+    sound(GPIO_OUTPUT,aSH, 200);
+    sound(GPIO_OUTPUT,aSH, 200);
+    sound(GPIO_OUTPUT,aH, 500);
+
+    sound(GPIO_OUTPUT,aSH, 200);
+    sound(GPIO_OUTPUT,aSH, 200);
+    sound(GPIO_OUTPUT,aH, 500);
+
+    sound(GPIO_OUTPUT,aSH, 200);
+    sound(GPIO_OUTPUT,aSH, 200);
+    sound(GPIO_OUTPUT,aH, 500);
+
+    sound(GPIO_OUTPUT,eH, 200);
+    sound(GPIO_OUTPUT,fH, 200);
+    sound(GPIO_OUTPUT,gH, 500);
+
+    sound(GPIO_OUTPUT,aH, 200);
+    sound(GPIO_OUTPUT,aH, 200);
+    sound(GPIO_OUTPUT,gH, 500);
+
+    sound(GPIO_OUTPUT,aH, 200);
+    sound(GPIO_OUTPUT,aH, 200);
+    sound(GPIO_OUTPUT,gH, 500);
+
+    sound(GPIO_OUTPUT,fH, 200);
+    sound(GPIO_OUTPUT,eH, 200);
+    sound(GPIO_OUTPUT,dH, 200);
 
 }
 
@@ -215,7 +283,7 @@ void play_march(uint8_t longplay) {
 }
 
 void beep(){
-    sound(GPIO_OUTPUT, c, 300);
+    sound(GPIO_OUTPUT, eH, 300);
 }
 
 void gpio_task(void *pvParameters) {
@@ -229,7 +297,8 @@ void gpio_task(void *pvParameters) {
             vTaskDelay(250/portTICK_PERIOD_MS);
 			xEventGroupClearBits(alarm_eventgroup, GPIO_SENSE_BIT);
             ESP_LOGI(TAG, "Count: %d", count);
-            beep();
+            // beep();
+            naagin();
 			// play_march(0);
         }
     }
